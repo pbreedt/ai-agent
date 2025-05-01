@@ -74,7 +74,7 @@ func (a *Agent) RespondToPrompt(ctx context.Context, prompt string) (string, err
 			MaxOutputTokens: 500,
 		}),
 		ai.WithMessages(a.storage.GetHistory()...),
-		ai.WithTools(GetWeatherTool(a.genkit), DoBasicArithmeticTool(a.genkit)),
+		ai.WithTools(GetWeatherTool(a.genkit), DoBasicArithmeticTool(a.genkit), GetContactTool(a.genkit)),
 	)
 	if err != nil {
 		log.Println("AI returned error: ", err.Error())
