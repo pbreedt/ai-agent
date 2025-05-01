@@ -46,21 +46,29 @@ func (a *Agent) Run(ctx context.Context, promptChan <-chan string, responseChan 
 	for {
 		select {
 		case p := <-promptChan:
-			// log.Println("AI got prompt:", p)
-			resp := a.RespondToPrompt(ctx, p)
-			// log.Println("AI response:", resp)
+			log.Println("AI got prompt:", p)
+			resp, err := a.RespondToPrompt(ctx, p)
+			if err != nil {
+				resp = err.Error()
+			}
+			log.Println("AI response:", resp)
 			responseChan <- resp
 		case <-ctx.Done():
-			// log.Println("Context done:", ctx.Err())
+			log.Println("Context done:", ctx.Err())
 			responseChan <- "AI shut down"
 			return
 		}
 	}
 }
 
-func (a *Agent) RespondToPrompt(ctx context.Context, prompt string) string {
+func (a *Agent) RespondToPrompt(ctx context.Context, prompt string) (string, error) {
 
 	resp, err := genkit.Generate(ctx, a.genkit,
+		ai.WithSystem(`
+		You are acting as a helpful AI chatbot called BreedtBot. You can answer general questions about the provided information.
+		You can remember the recent history of the conversation. This chat history is provided to you as context. You can also be asked to forget or remove items from lists.
+		You should first attempt to answer the question using one of the provided tools.`),
+		//Use only the context provided to answer the question. If you don't know, do not	make up an answer.
 		ai.WithPrompt(prompt),
 		ai.WithConfig(&googlegenai.GeminiConfig{
 			MaxOutputTokens: 500,
@@ -70,10 +78,10 @@ func (a *Agent) RespondToPrompt(ctx context.Context, prompt string) string {
 	)
 	if err != nil {
 		log.Println("AI returned error: ", err.Error())
-		return err.Error()
+		return "", err
 	}
 
 	a.storage.StoreMessage(resp.Message)
 
-	return resp.Text()
+	return resp.Text(), nil
 }

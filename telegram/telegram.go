@@ -3,28 +3,29 @@ package telegram
 import (
 	"context"
 	"fmt"
+	"net/rpc"
 	"os"
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
-	"github.com/pbreedt/ai-agent/ai"
 )
 
-type TelegramBot struct {
-	aiAgent  *ai.Agent
-	bot      *bot.Bot
-	contacts map[string]int
-}
+// type TelegramBot struct {
+// 	aiAgent  *ai.Agent
+// 	bot      *bot.Bot
+// 	contacts map[string]int
+// }
 
-func New(aiAgent *ai.Agent) *TelegramBot {
-	t := &TelegramBot{
-		aiAgent: aiAgent,
-	}
+// func New(aiAgent *ai.Agent) *TelegramBot {
+// 	t := &TelegramBot{
+// 		aiAgent: aiAgent,
+// 	}
 
-	return t
-}
+// 	return t
+// }
 
-func (t *TelegramBot) StartListner(ctx context.Context) {
+func StartListner(ctx context.Context, aiClient *rpc.Client) {
+
 	opts := []bot.Option{
 		bot.WithDefaultHandler(func(ctx context.Context, b *bot.Bot, update *models.Update) {
 			if update == nil || update.Message == nil {
@@ -32,7 +33,11 @@ func (t *TelegramBot) StartListner(ctx context.Context) {
 				return
 			}
 			fmt.Printf("Msg from %s with ChatID %d\n", update.Message.From.Username, update.Message.Chat.ID)
-			response := t.aiAgent.RespondToPrompt(ctx, update.Message.Text)
+			var response string
+			err := aiClient.Call("Agent.RPCRespondToPrompt", update.Message.Text, &response)
+			if err != nil {
+				response = err.Error()
+			}
 			b.SendMessage(ctx, &bot.SendMessageParams{
 				ChatID: update.Message.Chat.ID,
 				Text:   response,
@@ -44,14 +49,13 @@ func (t *TelegramBot) StartListner(ctx context.Context) {
 	if err != nil {
 		panic(err.Error())
 	}
-	t.bot = b
 
 	b.Start(ctx)
 }
 
-func (t *TelegramBot) SendTextMessage(ctx context.Context, to string, message string) {
-	t.bot.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID: t.contacts[to],
-		Text:   message,
-	})
-}
+// func (t *TelegramBot) SendTextMessage(ctx context.Context, to string, message string) {
+// 	t.bot.SendMessage(ctx, &bot.SendMessageParams{
+// 		ChatID: t.contacts[to],
+// 		Text:   message,
+// 	})
+// }
