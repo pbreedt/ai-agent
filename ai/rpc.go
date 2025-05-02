@@ -32,7 +32,7 @@ func StartRPCServer(a *Agent) {
 			conn, err := listener.Accept()
 			if err != nil {
 				fmt.Println("Error accepting:", err)
-				continue // more resilient to intermitent errors, will see some errors on shutdown
+				return
 			}
 			wg.Add(1)
 			go func() {
