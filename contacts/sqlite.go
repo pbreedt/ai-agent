@@ -56,6 +56,23 @@ func DestroyDatabase(path string) error {
 	return os.Remove(path)
 }
 
+func (c *ContactsDB) GetAll() ([]Person, error) {
+	var contacts []Person
+	rows, err := c.db.Query("select * from contact")
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var contact Person
+		err := rows.Scan(&contact.Id, &contact.Name, &contact.Surname, &contact.Nickname, &contact.Email, &contact.Mobile, &contact.TelegramID)
+		if err != nil {
+			return nil, err
+		}
+		contacts = append(contacts, contact)
+	}
+	return contacts, nil
+}
+
 func (c *ContactsDB) GetByPerson(p Person) (Person, error) {
 	if p.Id != nil {
 		return c.GetById(*p.Id)
@@ -100,6 +117,40 @@ func (c *ContactsDB) GetByNameSurname(name string, surname string) (Person, erro
 
 func (s *ContactsDB) Insert(person Person) error {
 	_, err := s.db.Exec("insert into contact(name, surname, nickname, email, mobile, telegram_id) values(?, ?, ?, ?, ?, ?)", person.Name, person.Surname, person.Nickname, person.Email, person.Mobile, person.TelegramID)
+	return err
+}
+
+// TODO: update is vulnerable to sql injection - need to use prepared statements or parameterized queries
+func (s *ContactsDB) Update(person Person) error {
+	sql := "update contact"
+
+	if person.Nickname != "" {
+		sql += fmt.Sprintf(" set nickname = '%s'", person.Nickname)
+	}
+	if person.Email != "" {
+		sql += fmt.Sprintf(" set email = '%s'", person.Email)
+	}
+	if person.Mobile != "" {
+		sql += fmt.Sprintf(" set mobile = '%s'", person.Mobile)
+	}
+	if person.TelegramID != nil {
+		sql += fmt.Sprintf(" set telegram_id = %d", *person.TelegramID)
+	}
+
+	if person.Id != nil {
+		if person.Name != "" {
+			sql += fmt.Sprintf(" set name = '%s'", person.Name)
+		}
+		if person.Surname != "" {
+			sql += fmt.Sprintf(" set surname = '%s'", person.Surname)
+		}
+		sql += fmt.Sprintf(" where id = %d", *person.Id)
+	} else if person.Name != "" && person.Surname != "" {
+		sql += fmt.Sprintf(" where name = '%s' and surname = '%s'", person.Name, person.Surname)
+	}
+
+	log.Println("Executing SQL:", sql)
+	_, err := s.db.Exec(sql)
 	return err
 }
 

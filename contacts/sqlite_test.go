@@ -94,6 +94,41 @@ func TestGetById(t *testing.T) {
 	}
 }
 
+func TestGetByPerson(t *testing.T) {
+	if !isOpen {
+		contactsDB = NewContactsDB(testDBPath)
+	}
+
+	// Name and Surname
+	person := Person{
+		Name:    "name",
+		Surname: "surname",
+	}
+
+	p, err := contactsDB.GetByPerson(person)
+	if err != nil {
+		t.Error(err)
+	}
+	if p.Name != person.Name || p.Surname != person.Surname {
+		t.Errorf("expected %s %s, got %s %s", testPerson.Name, testPerson.Surname, p.Name, p.Surname)
+	}
+	t.Logf("Person: %v", p)
+
+	// ID
+	person = Person{
+		Id: IntPointer(1),
+	}
+
+	p, err = contactsDB.GetByPerson(person)
+	if err != nil {
+		t.Error(err)
+	}
+	if *(p.Id) != *(person.Id) {
+		t.Errorf("expected %d, got %d", *(testPerson.Id), *(p.Id))
+	}
+	t.Logf("Person: %v", p)
+}
+
 func DeleteById(t *testing.T) {
 	if !isOpen {
 		contactsDB = NewContactsDB(testDBPath)

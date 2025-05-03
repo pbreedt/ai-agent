@@ -35,30 +35,38 @@ func main() {
 		log.Fatalf("could not create contact table: %v", e)
 	}
 
-	p := contacts.Person{
-		Name:     "Petrus",
-		Surname:  "Breedt",
-		Nickname: "Peet",
-		Email:    "petrus.breedt@gmail.com",
-		Mobile:   "+1 (224) 706-7025",
-	}
+	// p := contacts.Person{
+	// 	Name:     "Petrus",
+	// 	Surname:  "Breedt",
+	// 	Nickname: "Peet",
+	// 	Email:    "petrus.breedt@gmail.com",
+	// 	Mobile:   "+1 (224) 706-7025",
+	// }
 
-	e = db.Insert(p)
-	if e != nil {
-		log.Fatalf("could not insert contact: %v", e)
-	}
+	// e = db.Insert(p)
+	// if e != nil {
+	// 	log.Fatalf("could not insert contact: %v", e)
+	// }
 
-	p = contacts.Person{
-		Name:     "John",
-		Surname:  "Doe",
-		Nickname: "John Doe",
-		Email:    "jdoe@example.com",
-		Mobile:   "+31612345678",
-	}
+	// p = contacts.Person{
+	// 	Name:     "John",
+	// 	Surname:  "Doe",
+	// 	Nickname: "John Doe",
+	// 	Email:    "jdoe@example.com",
+	// 	Mobile:   "+31612345678",
+	// }
 
-	e = db.Insert(p)
-	if e != nil {
-		log.Fatalf("could not insert contact: %v", e)
+	// e = db.Insert(p)
+	// if e != nil {
+	// 	log.Fatalf("could not insert contact: %v", e)
+	// }
+
+	all, err := db.GetAll()
+	if err != nil {
+		log.Printf("error in retrieving all: %v\n", err)
+	}
+	for _, c := range all {
+		log.Printf("%+v\n", c)
 	}
 
 	// i, _ := ai.InitContactsIndexerRetriever(g)
