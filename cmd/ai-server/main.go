@@ -6,7 +6,7 @@ import (
 	"github.com/joho/godotenv"
 
 	"github.com/pbreedt/ai-agent/ai"
-	"github.com/pbreedt/ai-agent/storage"
+	"github.com/pbreedt/ai-agent/history"
 )
 
 func main() {
@@ -15,8 +15,8 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	s := storage.NewMemoryStorage()
-	a := ai.NewAgent(ai.WithStorage(s))
+	s := history.NewInMemoryHistory(100) // TODO: make configurable
+	a := ai.NewAgent(ai.WithHistory(s))
 
 	ai.StartRPCServer(a)
 }

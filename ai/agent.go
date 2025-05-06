@@ -7,14 +7,14 @@ import (
 	"github.com/firebase/genkit/go/ai"
 	"github.com/firebase/genkit/go/genkit"
 	"github.com/firebase/genkit/go/plugins/googlegenai"
-	"github.com/pbreedt/ai-agent/storage"
+	"github.com/pbreedt/ai-agent/history"
 )
 
 // Requires:
 // export GEMINI_API_KEY=<key>
 type Agent struct {
 	genkit  *genkit.Genkit
-	storage storage.Storage
+	history history.History
 }
 
 func NewAgent(opts ...Option) *Agent {
@@ -29,7 +29,7 @@ func NewAgent(opts ...Option) *Agent {
 
 	a := &Agent{
 		genkit:  g,
-		storage: storage.NewNoStorage(),
+		history: history.NewNoHistory(),
 	}
 
 	for _, opt := range opts {
@@ -73,7 +73,7 @@ func (a *Agent) RespondToPrompt(ctx context.Context, prompt string) (string, err
 		ai.WithConfig(&googlegenai.GeminiConfig{
 			MaxOutputTokens: 500,
 		}),
-		ai.WithMessages(a.storage.GetHistory()...),
+		ai.WithMessages(a.history.GetLast(10)...), // TODO: Make this configurable
 		ai.WithTools(GetWeatherTool(a.genkit), DoBasicArithmeticTool(a.genkit),
 			GetContactTool(a.genkit), StoreContactTool(a.genkit),
 		),
@@ -83,7 +83,7 @@ func (a *Agent) RespondToPrompt(ctx context.Context, prompt string) (string, err
 		return "", err
 	}
 
-	a.storage.StoreMessage(resp.Message)
+	a.history.Store(resp.Message)
 
 	return resp.Text(), nil
 }

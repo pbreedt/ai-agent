@@ -10,20 +10,6 @@ import (
 	"github.com/go-telegram/bot/models"
 )
 
-// type TelegramBot struct {
-// 	aiAgent  *ai.Agent
-// 	bot      *bot.Bot
-// 	contacts map[string]int
-// }
-
-// func New(aiAgent *ai.Agent) *TelegramBot {
-// 	t := &TelegramBot{
-// 		aiAgent: aiAgent,
-// 	}
-
-// 	return t
-// }
-
 func StartListner(ctx context.Context, aiClient *rpc.Client) {
 
 	opts := []bot.Option{

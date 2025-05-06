@@ -30,13 +30,9 @@ func GetContactTool(g *genkit.Genkit) ai.Tool {
 	getContactTool = genkit.DefineTool(
 		g, "getContact", "Find and return a contact that matches the provided information.",
 		func(ctx *ai.ToolContext, input contacts.Person) (string, error) {
-			// _, r := InitContactsIndexerRetriever(g)
-			// rtrvFlow := Retrieve(g, r)
-			// result, err := rtrvFlow.Run(context.Background(), fmt.Sprintf("Find the contact that matches the following details: %s", input.String()))
-
 			result, err := contactsDB.GetByPerson(input)
 			if err != nil {
-				return err.Error(), err
+				return fmt.Sprintf("The contact could not be found due to the following error: %s", err.Error()), err
 			}
 			return fmt.Sprintf("The contact is: %s", result), nil
 		})
@@ -74,7 +70,7 @@ func StoreContactTool(g *genkit.Genkit) ai.Tool {
 
 			err := contactsDB.Insert(input)
 			if err != nil {
-				return err.Error(), err
+				return fmt.Sprintf("The contact could not be stored due to the following error: %s", err.Error()), err
 			}
 			return "The contact was stored successfully.", nil
 		})
