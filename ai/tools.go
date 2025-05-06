@@ -2,10 +2,53 @@ package ai
 
 import (
 	"fmt"
+	"log"
+	"time"
 
 	"github.com/firebase/genkit/go/ai"
 	"github.com/firebase/genkit/go/genkit"
 )
+
+type CalendarInput struct {
+	From time.Time `json:"from-datetime"`
+	To   time.Time `json:"to-datetime"`
+}
+
+func GetCalendarEventsTool(a *Agent) ai.Tool {
+
+	getCalEvents := genkit.LookupTool(a.genkit, "getCalEvents")
+
+	if getCalEvents != nil {
+		return getCalEvents
+	}
+
+	getCalEvents = genkit.DefineTool(
+		a.genkit, "getCalEvents", "Gets the calendar events within a given time range. If no time range is provided, then assume start time 00:00 on the start date to end time 24:00 on the end date.",
+		func(ctx *ai.ToolContext, input CalendarInput) (string, error) {
+			if input.From.IsZero() {
+				return "Please provide at least a start date.", nil
+			}
+			if input.To.IsZero() {
+				input.To = input.From.Add(time.Hour * 24)
+			}
+
+			log.Printf("[GetCalendarEventsTool] Getting events from %s to %s\n", input.From, input.To)
+			log.Printf("[GetCalendarEventsTool] Agent: %v, Calendar: %v\n", a, a.calendar)
+
+			events, err := a.calendar.GetEvents(input.From, input.To)
+			if err != nil {
+				return fmt.Sprintf("The calendar entries could not be found due to the following error: %s", err.Error()), err
+			}
+
+			var eventStrings []string
+			for _, event := range events {
+				eventStrings = append(eventStrings, event.String())
+			}
+			return fmt.Sprintf("The calendar entries from %s to %s are: %s", input.From, input.To, eventStrings), nil
+		})
+
+	return getCalEvents
+}
 
 type WeatherInput struct {
 	Location string `json:"location"`
@@ -30,7 +73,7 @@ func GetWeatherTool(g *genkit.Genkit) ai.Tool {
 	return getWeatherTool
 }
 
-type ArithemeticInput struct {
+type ArithmeticInput struct {
 	Number1   float64 `json:"num1"`
 	Operation string  `json:"operation"`
 	Number2   float64 `json:"num2"`
@@ -51,7 +94,7 @@ func DoBasicArithmeticTool(g *genkit.Genkit) ai.Tool {
 		10 / 5 = 2
 		17 - 4 = 13
 		`,
-		func(ctx *ai.ToolContext, input ArithemeticInput) (string, error) {
+		func(ctx *ai.ToolContext, input ArithmeticInput) (string, error) {
 			switch input.Operation {
 			case "+", "add", "sum", "plus", "increase":
 				return fmt.Sprintf("%f + %f = %f", input.Number1, input.Number2, input.Number1+input.Number2), nil

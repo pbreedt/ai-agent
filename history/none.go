@@ -4,7 +4,7 @@ import "github.com/firebase/genkit/go/ai"
 
 type NoHistory struct{}
 
-func NewNoHistory() History {
+func NewNoHistory() *NoHistory {
 	return &NoHistory{}
 }
 

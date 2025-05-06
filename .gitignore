@@ -2,6 +2,9 @@
 .debug
 .vscode
 .env*
+.genkit
 coverage.txt
 cmd/test/data/
 *.db
+credentials.json
+token.json

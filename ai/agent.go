@@ -2,7 +2,9 @@ package ai
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"time"
 
 	"github.com/firebase/genkit/go/ai"
 	"github.com/firebase/genkit/go/genkit"
@@ -13,8 +15,9 @@ import (
 // Requires:
 // export GEMINI_API_KEY=<key>
 type Agent struct {
-	genkit  *genkit.Genkit
-	history history.History
+	genkit      *genkit.Genkit
+	chatHistory ChatHistory
+	calendar    Calendar
 }
 
 func NewAgent(opts ...Option) *Agent {
@@ -28,8 +31,8 @@ func NewAgent(opts ...Option) *Agent {
 	}
 
 	a := &Agent{
-		genkit:  g,
-		history: history.NewNoHistory(),
+		genkit:      g,
+		chatHistory: history.NewNoHistory(),
 	}
 
 	for _, opt := range opts {
@@ -63,19 +66,25 @@ func (a *Agent) Run(ctx context.Context, promptChan <-chan string, responseChan 
 
 func (a *Agent) RespondToPrompt(ctx context.Context, prompt string) (string, error) {
 
+	dte := time.Now().Format(time.RFC3339)
+
 	resp, err := genkit.Generate(ctx, a.genkit,
-		ai.WithSystem(`
+		ai.WithSystem(
+			fmt.Sprintf(`
 		You are acting as a helpful AI chatbot called BreedtBot. You can answer general questions about the provided information.
 		You can remember the recent history of the conversation. This chat history is provided to you as context. You can also be asked to forget or remove items from lists.
-		You should first attempt to answer the question using one of the provided tools.`),
+		You should first attempt to answer the question using one of the provided tools.
+		Today is %s`, dte),
+		),
 		//Use only the context provided to answer the question. If you don't know, do not	make up an answer.
 		ai.WithPrompt(prompt),
 		ai.WithConfig(&googlegenai.GeminiConfig{
 			MaxOutputTokens: 500,
 		}),
-		ai.WithMessages(a.history.GetLast(10)...), // TODO: Make this configurable
+		ai.WithMessages(a.chatHistory.GetLast(10)...), // TODO: Make this configurable
 		ai.WithTools(GetWeatherTool(a.genkit), DoBasicArithmeticTool(a.genkit),
 			GetContactTool(a.genkit), StoreContactTool(a.genkit),
+			GetCalendarEventsTool(a),
 		),
 	)
 	if err != nil {
@@ -83,7 +92,7 @@ func (a *Agent) RespondToPrompt(ctx context.Context, prompt string) (string, err
 		return "", err
 	}
 
-	a.history.Store(resp.Message)
+	a.chatHistory.Store(resp.Message)
 
 	return resp.Text(), nil
 }

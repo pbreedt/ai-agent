@@ -14,6 +14,8 @@ import (
 	"time"
 )
 
+// StartRPCServer starts an RPC server on port 1234
+// and blocks until the server is shut down
 func StartRPCServer(a *Agent) {
 	err := rpc.Register(a)
 	if err != nil {

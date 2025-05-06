@@ -9,7 +9,7 @@ type InMemoryHistory struct {
 	maxHistory  int
 }
 
-func NewInMemoryHistory(max int) History {
+func NewInMemoryHistory(max int) *InMemoryHistory {
 	return &InMemoryHistory{
 		maxHistory: max,
 	}

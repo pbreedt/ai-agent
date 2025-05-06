@@ -74,8 +74,13 @@ func (c *ContactsDB) GetAll() ([]Person, error) {
 }
 
 func (c *ContactsDB) GetByPerson(p Person) (Person, error) {
+	var found Person
+	var err error
 	if p.Id != nil {
-		return c.GetById(*p.Id)
+		found, err = c.GetById(*p.Id)
+		if found != (Person{}) || err != nil {
+			return found, err
+		}
 	}
 	if p.Name != "" && p.Surname != "" {
 		return c.GetByNameSurname(p.Name, p.Surname)
