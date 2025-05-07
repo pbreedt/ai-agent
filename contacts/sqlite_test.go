@@ -6,7 +6,7 @@ import (
 
 var (
 	isOpen     = false
-	contactsDB *ContactsDB
+	contactsDB *SqliteContactsDB
 	testPerson = Person{
 		Id:         IntPointer(1),
 		Name:       "name",
@@ -23,7 +23,7 @@ const (
 )
 
 func TestOpen(t *testing.T) {
-	contactsDB = NewContactsDB(testDBPath)
+	contactsDB = NewSqliteContactsDB(testDBPath)
 	err := contactsDB.Open()
 	if err != nil {
 		isOpen = false
@@ -34,7 +34,7 @@ func TestOpen(t *testing.T) {
 
 func TestSQLite(t *testing.T) {
 	if !isOpen {
-		contactsDB = NewContactsDB(testDBPath)
+		contactsDB = NewSqliteContactsDB(testDBPath)
 	}
 	err := contactsDB.CreateContactTable()
 	if err != nil {
@@ -44,7 +44,7 @@ func TestSQLite(t *testing.T) {
 
 func TestInsert(t *testing.T) {
 	if !isOpen {
-		contactsDB = NewContactsDB(testDBPath)
+		contactsDB = NewSqliteContactsDB(testDBPath)
 	}
 	err := contactsDB.Insert(testPerson)
 	if err != nil {
@@ -54,7 +54,7 @@ func TestInsert(t *testing.T) {
 
 func TestGetByName(t *testing.T) {
 	if !isOpen {
-		contactsDB = NewContactsDB(testDBPath)
+		contactsDB = NewSqliteContactsDB(testDBPath)
 	}
 
 	p, err := contactsDB.GetByName("name")
@@ -68,7 +68,7 @@ func TestGetByName(t *testing.T) {
 
 func TestGetByNameSurname(t *testing.T) {
 	if !isOpen {
-		contactsDB = NewContactsDB(testDBPath)
+		contactsDB = NewSqliteContactsDB(testDBPath)
 	}
 
 	p, err := contactsDB.GetByNameSurname("name", "surname")
@@ -82,7 +82,7 @@ func TestGetByNameSurname(t *testing.T) {
 
 func TestGetById(t *testing.T) {
 	if !isOpen {
-		contactsDB = NewContactsDB(testDBPath)
+		contactsDB = NewSqliteContactsDB(testDBPath)
 	}
 
 	p, err := contactsDB.GetById(1)
@@ -96,7 +96,7 @@ func TestGetById(t *testing.T) {
 
 func TestGetByPerson(t *testing.T) {
 	if !isOpen {
-		contactsDB = NewContactsDB(testDBPath)
+		contactsDB = NewSqliteContactsDB(testDBPath)
 	}
 
 	// Name and Surname
@@ -131,7 +131,7 @@ func TestGetByPerson(t *testing.T) {
 
 func DeleteById(t *testing.T) {
 	if !isOpen {
-		contactsDB = NewContactsDB(testDBPath)
+		contactsDB = NewSqliteContactsDB(testDBPath)
 	}
 	err := contactsDB.DeleteById(1)
 	if err != nil {
@@ -141,7 +141,7 @@ func DeleteById(t *testing.T) {
 
 func TestClose(t *testing.T) {
 	if !isOpen {
-		contactsDB = NewContactsDB(testDBPath)
+		contactsDB = NewSqliteContactsDB(testDBPath)
 	}
 	err := contactsDB.Close()
 	if err != nil {

@@ -1,4 +1,4 @@
-package googlecal
+package calendar
 
 import (
 	"context"
@@ -9,13 +9,14 @@ import (
 	"os"
 	"time"
 
-	"github.com/pbreedt/ai-agent/ai"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/calendar/v3"
 	"google.golang.org/api/option"
 )
 
+// GoogleCalendar wrapping the Google Calendar API
+// and implements the Calendar interface
 type GoogleCalendar struct {
 	srv        *calendar.Service
 	maxResults int
@@ -68,7 +69,7 @@ func NewGoogleCalendar(maxResults int) (*GoogleCalendar, error) {
 	// }
 }
 
-func (cal *GoogleCalendar) GetEvents(from time.Time, to time.Time) ([]ai.CalendarEvent, error) {
+func (cal *GoogleCalendar) GetEvents(from time.Time, to time.Time) ([]Event, error) {
 	f := from.Format(time.RFC3339)
 	t := to.Format(time.RFC3339)
 
@@ -81,7 +82,7 @@ func (cal *GoogleCalendar) GetEvents(from time.Time, to time.Time) ([]ai.Calenda
 		return nil, err
 	}
 
-	var r []ai.CalendarEvent
+	var r []Event
 	fmt.Println("Upcoming events:")
 	if len(events.Items) == 0 {
 		fmt.Println("No upcoming events found.")
@@ -92,7 +93,7 @@ func (cal *GoogleCalendar) GetEvents(from time.Time, to time.Time) ([]ai.Calenda
 				date = item.Start.Date
 			}
 			fmt.Printf("%v (%v)\n", item.Summary, date)
-			r = append(r, ai.CalendarEvent{
+			r = append(r, Event{
 				Summary:  item.Summary,
 				Start:    date,
 				End:      item.End.DateTime,

@@ -8,29 +8,21 @@ import (
 	"github.com/pbreedt/ai-agent/contacts"
 )
 
-var (
-	contactsDB *contacts.ContactsDB
-)
+// var (
+// 	contactsDB *contacts.SqliteContactsDB
+// )
 
-func GetContactTool(g *genkit.Genkit) ai.Tool {
+func GetContactTool(a *Agent) ai.Tool {
 
-	getContactTool := genkit.LookupTool(g, "getContact")
+	getContactTool := genkit.LookupTool(a.genkit, "getContact")
 	if getContactTool != nil {
 		return getContactTool
 	}
 
-	if contactsDB == nil {
-		contactsDB = contacts.NewContactsDB("../contacts.db")
-		err := contactsDB.Open()
-		if err != nil {
-			panic(err)
-		}
-	}
-
 	getContactTool = genkit.DefineTool(
-		g, "getContact", "Find and return a contact that matches the provided information.",
+		a.genkit, "getContact", "Find and return a contact that matches the provided information.",
 		func(ctx *ai.ToolContext, input contacts.Person) (string, error) {
-			result, err := contactsDB.GetByPerson(input)
+			result, err := a.contactsDB.GetByPerson(input)
 			if err != nil {
 				return fmt.Sprintf("The contact could not be found due to the following error: %s", err.Error()), err
 			}
@@ -40,35 +32,27 @@ func GetContactTool(g *genkit.Genkit) ai.Tool {
 	return getContactTool
 }
 
-func StoreContactTool(g *genkit.Genkit) ai.Tool {
+func StoreContactTool(a *Agent) ai.Tool {
 
-	storeContactTool := genkit.LookupTool(g, "storeContact")
+	storeContactTool := genkit.LookupTool(a.genkit, "storeContact")
 	if storeContactTool != nil {
 		return storeContactTool
 	}
 
-	if contactsDB == nil {
-		contactsDB = contacts.NewContactsDB("../contacts.db")
-		err := contactsDB.Open()
-		if err != nil {
-			panic(err)
-		}
-	}
-
 	storeContactTool = genkit.DefineTool(
-		g, "storeContact", `Store the provided information of a contact. To store a contact, you need at least the full name (name and surname). 
+		a.genkit, "storeContact", `Store the provided information of a contact. To store a contact, you need at least the full name (name and surname). 
 		Any of the following details are optional: nickname, email, mobile, telegram id.
 		If the contact already exists, it will be updated with the provided information.`,
 		func(ctx *ai.ToolContext, input contacts.Person) (string, error) {
-			p, e := contactsDB.GetByPerson(input)
+			p, e := a.contactsDB.GetByPerson(input)
 			if e == nil && p != (contacts.Person{}) {
 				if !input.Compare(p) {
-					return "The contact was updated successfully.", contactsDB.Update(input)
+					return "The contact was updated successfully.", a.contactsDB.Update(input)
 				}
 				return "The contact already exists: " + p.String(), nil
 			}
 
-			err := contactsDB.Insert(input)
+			err := a.contactsDB.Insert(input)
 			if err != nil {
 				return fmt.Sprintf("The contact could not be stored due to the following error: %s", err.Error()), err
 			}
@@ -77,32 +61,3 @@ func StoreContactTool(g *genkit.Genkit) ai.Tool {
 
 	return storeContactTool
 }
-
-// Opted to handle update and insert together in 'storeContact' - more control over duplicate records
-// func UpdateContactTool(g *genkit.Genkit) ai.Tool {
-
-// 	updateContactTool := genkit.LookupTool(g, "updateContact")
-// 	if updateContactTool != nil {
-// 		return updateContactTool
-// 	}
-
-// 	if contactsDB == nil {
-// 		contactsDB = contacts.NewContactsDB("../contacts.db")
-// 		err := contactsDB.Open()
-// 		if err != nil {
-// 			panic(err)
-// 		}
-// 	}
-
-// 	updateContactTool = genkit.DefineTool(
-// 		g, "updateContact", "Update the provided information of a contact. To update a contact, you need either the id the full name (name and surname) of the contact. Any other provided details (nickname, email, mobile, telegram id) should be updated.",
-// 		func(ctx *ai.ToolContext, input contacts.Person) (string, error) {
-// 			err := contactsDB.Update(input)
-// 			if err != nil {
-// 				return err.Error(), err
-// 			}
-// 			return "The contact was stored successfully.", nil
-// 		})
-
-// 	return updateContactTool
-// }

@@ -10,16 +10,16 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-type ContactsDB struct {
+type SqliteContactsDB struct {
 	path string
 	db   *sql.DB
 }
 
-func NewContactsDB(path string) *ContactsDB {
-	return &ContactsDB{path: path}
+func NewSqliteContactsDB(path string) *SqliteContactsDB {
+	return &SqliteContactsDB{path: path}
 }
 
-func (c *ContactsDB) Open() error {
+func (c *SqliteContactsDB) Open() error {
 	db, err := sql.Open("sqlite3", c.path)
 	if err != nil {
 		return err
@@ -28,11 +28,11 @@ func (c *ContactsDB) Open() error {
 	return nil
 }
 
-func (c *ContactsDB) Close() error {
+func (c *SqliteContactsDB) Close() error {
 	return c.db.Close()
 }
 
-func (c *ContactsDB) CreateContactTable() error {
+func (c *SqliteContactsDB) CreateContactTable() error {
 	sqlStmt := `
 	create table if not exists contact (
 		id integer not null primary key, 
@@ -56,7 +56,7 @@ func DestroyDatabase(path string) error {
 	return os.Remove(path)
 }
 
-func (c *ContactsDB) GetAll() ([]Person, error) {
+func (c *SqliteContactsDB) GetAll() ([]Person, error) {
 	var contacts []Person
 	rows, err := c.db.Query("select * from contact")
 	if err != nil {
@@ -73,7 +73,7 @@ func (c *ContactsDB) GetAll() ([]Person, error) {
 	return contacts, nil
 }
 
-func (c *ContactsDB) GetByPerson(p Person) (Person, error) {
+func (c *SqliteContactsDB) GetByPerson(p Person) (Person, error) {
 	var found Person
 	var err error
 	if p.Id != nil {
@@ -88,19 +88,19 @@ func (c *ContactsDB) GetByPerson(p Person) (Person, error) {
 	return c.GetByName(p.Name)
 }
 
-func (c *ContactsDB) GetById(id int) (Person, error) {
+func (c *SqliteContactsDB) GetById(id int) (Person, error) {
 	var contact Person
 	err := c.db.QueryRow("select * from contact where id = ?", id).Scan(&contact.Id, &contact.Name, &contact.Surname, &contact.Nickname, &contact.Email, &contact.Mobile, &contact.TelegramID)
 	return contact, err
 }
 
-func (c *ContactsDB) GetByName(name string) (Person, error) {
+func (c *SqliteContactsDB) GetByName(name string) (Person, error) {
 	var contact Person
 	err := c.db.QueryRow("select * from contact where name = ?", name).Scan(&contact.Id, &contact.Name, &contact.Surname, &contact.Nickname, &contact.Email, &contact.Mobile, &contact.TelegramID)
 	return contact, err
 }
 
-func (c *ContactsDB) GetByFullname(fullname string) (Person, error) {
+func (c *SqliteContactsDB) GetByFullname(fullname string) (Person, error) {
 	var contact Person
 
 	split := strings.Split(fullname, " ")
@@ -113,20 +113,20 @@ func (c *ContactsDB) GetByFullname(fullname string) (Person, error) {
 	return c.GetByNameSurname(name, surname)
 }
 
-func (c *ContactsDB) GetByNameSurname(name string, surname string) (Person, error) {
+func (c *SqliteContactsDB) GetByNameSurname(name string, surname string) (Person, error) {
 	var contact Person
 
 	err := c.db.QueryRow("select * from contact where name = ? and surname = ?", name, surname).Scan(&contact.Id, &contact.Name, &contact.Surname, &contact.Nickname, &contact.Email, &contact.Mobile, &contact.TelegramID)
 	return contact, err
 }
 
-func (s *ContactsDB) Insert(person Person) error {
+func (s *SqliteContactsDB) Insert(person Person) error {
 	_, err := s.db.Exec("insert into contact(name, surname, nickname, email, mobile, telegram_id) values(?, ?, ?, ?, ?, ?)", person.Name, person.Surname, person.Nickname, person.Email, person.Mobile, person.TelegramID)
 	return err
 }
 
 // TODO: update is vulnerable to sql injection - need to use prepared statements or parameterized queries
-func (s *ContactsDB) Update(person Person) error {
+func (s *SqliteContactsDB) Update(person Person) error {
 	sql := "update contact"
 
 	if person.Nickname != "" {
@@ -159,22 +159,22 @@ func (s *ContactsDB) Update(person Person) error {
 	return err
 }
 
-func (s *ContactsDB) DeleteById(id int) error {
+func (s *SqliteContactsDB) DeleteById(id int) error {
 	_, err := s.db.Exec("delete from contact where id = ?", id)
 	return err
 }
 
-func (s *ContactsDB) DeleteByNameSurname(name string, surname string) error {
+func (s *SqliteContactsDB) DeleteByNameSurname(name string, surname string) error {
 	_, err := s.db.Exec("delete from contact where name = ? and surname = ?", name, surname)
 	return err
 }
 
-func (s *ContactsDB) Clear() error {
+func (s *SqliteContactsDB) Clear() error {
 	_, err := s.db.Exec("delete from foo")
 	return err
 }
 
-func (s *ContactsDB) Count() (int, error) {
+func (s *SqliteContactsDB) Count() (int, error) {
 	var count int
 	err := s.db.QueryRow("select count(*) from foo").Scan(&count)
 	return count, err

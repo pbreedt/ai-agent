@@ -24,7 +24,7 @@ func main() {
 	// 	log.Fatal(err)
 	// }
 
-	db := contacts.NewContactsDB("../contacts.db")
+	db := contacts.NewSqliteContactsDB("../contacts.db")
 	e := db.Open()
 	if e != nil {
 		log.Fatalf("could not open database: %v", e)

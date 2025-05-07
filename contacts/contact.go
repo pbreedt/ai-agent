@@ -6,15 +6,30 @@ import (
 	"log"
 )
 
+type ContactsDB interface {
+	GetByPerson(p Person) (Person, error)
+	Insert(person Person) error
+	Update(person Person) error
+
+	// GetById(id int) (Person, error)
+	// GetByName(name string) (Person, error)
+	// GetByFullname(fullname string) (Person, error)
+	// GetByNameSurname(name string, surname string) (Person, error)
+	// DeleteById(id int) error
+	// DeleteByNameSurname(name string, surname string) error
+	// Clear() error
+	// Count() (int, error)
+}
+
 type Person struct {
-	Id       *int   `json:"db_id,omitempty" doc:"Id of the contact in the database"`
-	Name     string `json:"name,omitempty" doc:"contacts first name"`
-	Surname  string `json:"surname,omitempty" doc:"contact's last name"`
-	Nickname string `json:"nickname,omitempty" doc:"contact's nickname, alias or preferred name"`
-	// Relationship string `json:"relationship,omitempty" doc:"contact's role or relationship to the user"`
+	Id         *int   `json:"db_id,omitempty" doc:"Id of the contact in the database"`
+	Name       string `json:"name,omitempty" doc:"contacts first name"`
+	Surname    string `json:"surname,omitempty" doc:"contact's last name"`
+	Nickname   string `json:"nickname,omitempty" doc:"contact's nickname, alias or preferred name"`
 	Email      string `json:"email,omitempty" doc:"contact's email address"`
 	Mobile     string `json:"mobile,omitempty" doc:"contact's mobile number"`
 	TelegramID *int64 `json:"telegram-id,omitempty" doc:"contact's telegram user (chat) id"`
+	// Relationship string `json:"relationship,omitempty" doc:"contact's role or relationship to the user"`
 }
 
 func IntPointer(i int) *int {

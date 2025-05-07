@@ -2,13 +2,13 @@ package ai
 
 import (
 	"context"
-	"fmt"
 	"log"
-	"time"
 
 	"github.com/firebase/genkit/go/ai"
 	"github.com/firebase/genkit/go/genkit"
 	"github.com/firebase/genkit/go/plugins/googlegenai"
+	"github.com/pbreedt/ai-agent/calendar"
+	"github.com/pbreedt/ai-agent/contacts"
 	"github.com/pbreedt/ai-agent/history"
 )
 
@@ -16,8 +16,9 @@ import (
 // export GEMINI_API_KEY=<key>
 type Agent struct {
 	genkit      *genkit.Genkit
-	chatHistory ChatHistory
-	calendar    Calendar
+	chatHistory history.ChatHistory
+	calendar    calendar.Calendar
+	contactsDB  contacts.ContactsDB
 }
 
 func NewAgent(opts ...Option) *Agent {
@@ -42,48 +43,24 @@ func NewAgent(opts ...Option) *Agent {
 	return a
 }
 
-// Read from prompt channel and respond
-func (a *Agent) Run(ctx context.Context, promptChan <-chan string, responseChan chan<- string) {
-	defer close(responseChan)
-
-	for {
-		select {
-		case p := <-promptChan:
-			log.Println("AI got prompt:", p)
-			resp, err := a.RespondToPrompt(ctx, p)
-			if err != nil {
-				resp = err.Error()
-			}
-			log.Println("AI response:", resp)
-			responseChan <- resp
-		case <-ctx.Done():
-			log.Println("Context done:", ctx.Err())
-			responseChan <- "AI shut down"
-			return
-		}
-	}
-}
-
 func (a *Agent) RespondToPrompt(ctx context.Context, prompt string) (string, error) {
 
-	dte := time.Now().Format(time.RFC3339)
+	// dte := time.Now().Format(time.RFC3339)
 
 	resp, err := genkit.Generate(ctx, a.genkit,
-		ai.WithSystem(
-			fmt.Sprintf(`
+		ai.WithSystem(`
 		You are acting as a helpful AI chatbot called BreedtBot. You can answer general questions about the provided information.
 		You can remember the recent history of the conversation. This chat history is provided to you as context. You can also be asked to forget or remove items from lists.
-		You should first attempt to answer the question using one of the provided tools.
-		Today is %s`, dte),
-		),
+		You should first attempt to answer the question using one of the provided tools.`),
 		//Use only the context provided to answer the question. If you don't know, do not	make up an answer.
 		ai.WithPrompt(prompt),
 		ai.WithConfig(&googlegenai.GeminiConfig{
 			MaxOutputTokens: 500,
 		}),
 		ai.WithMessages(a.chatHistory.GetLast(10)...), // TODO: Make this configurable
-		ai.WithTools(GetWeatherTool(a.genkit), DoBasicArithmeticTool(a.genkit),
-			GetContactTool(a.genkit), StoreContactTool(a.genkit),
+		ai.WithTools(
+			DoBasicArithmeticTool(a.genkit),
+			GetContactTool(a), StoreContactTool(a),
 			GetCalendarEventsTool(a),
 		),
 	)
