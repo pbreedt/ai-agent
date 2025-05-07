@@ -61,7 +61,7 @@ func (a *Agent) RespondToPrompt(ctx context.Context, prompt string) (string, err
 		ai.WithTools(
 			DoBasicArithmeticTool(a.genkit),
 			GetContactTool(a), StoreContactTool(a),
-			GetCalendarEventsTool(a),
+			GetCalendarEventsTool(a), CreateCalendarEventsTool(a),
 		),
 	)
 	if err != nil {

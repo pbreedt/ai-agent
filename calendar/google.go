@@ -22,6 +22,7 @@ type GoogleCalendar struct {
 	maxResults int
 }
 
+// TODO: cater for specifying a calendar
 func NewGoogleCalendar(maxResults int) (*GoogleCalendar, error) {
 	ctx := context.Background()
 	b, err := os.ReadFile("google-cal-creds.json")
@@ -31,7 +32,9 @@ func NewGoogleCalendar(maxResults int) (*GoogleCalendar, error) {
 	}
 
 	// If modifying these scopes, delete your previously saved token.json.
-	config, err := google.ConfigFromJSON(b, calendar.CalendarEventsScope, calendar.CalendarReadonlyScope)
+	config, err := google.ConfigFromJSON(b,
+		calendar.CalendarScope, // required for creating events
+	)
 	if err != nil {
 		log.Fatalf("Unable to parse client secret file to config: %v", err)
 		return nil, err
@@ -104,6 +107,71 @@ func (cal *GoogleCalendar) GetEvents(from time.Time, to time.Time) ([]Event, err
 	}
 
 	return r, nil
+}
+
+func (cal *GoogleCalendar) CreateEvent(event *Event) (*Event, error) {
+	// Refer to the Go quickstart on how to setup the environment:
+	// https://developers.google.com/workspace/calendar/quickstart/go
+	// Change the scope to calendar.CalendarScope and delete any stored credentials.
+
+	// TODO: add recurrence
+	// TODO: add full-day events + proper timezones
+
+	ge := ToGoogleEvent(event)
+
+	calendarId := "primary"
+	ge, err := cal.srv.Events.Insert(calendarId, ge).Do()
+	if err != nil {
+		log.Fatalf("Unable to create event. %v\n", err)
+		return nil, err
+	}
+	fmt.Printf("Event created: %s\n", ge.HtmlLink)
+
+	return FromGoogleEvent(ge), nil
+}
+
+func ToGoogleEvent(event *Event) *calendar.Event {
+	ge := &calendar.Event{
+		Summary:  event.Summary,
+		Location: event.Location,
+		// Description: "A chance to hear more about Google's developer products.",
+		Start: &calendar.EventDateTime{
+			DateTime: event.Start,
+			TimeZone: "America/Chicago",
+		},
+		End: &calendar.EventDateTime{
+			DateTime: event.End,
+			TimeZone: "America/Chicago",
+		},
+		// Recurrence: []string{"RRULE:FREQ=DAILY;COUNT=2"},
+		Attendees: []*calendar.EventAttendee{},
+	}
+	for _, a := range event.Attendees {
+		ge.Attendees = append(ge.Attendees, &calendar.EventAttendee{
+			Email:       a.Email,
+			DisplayName: a.DisplayName,
+		})
+	}
+
+	return ge
+}
+
+func FromGoogleEvent(event *calendar.Event) *Event {
+	e := &Event{
+		Summary:   event.Summary,
+		Location:  event.Location,
+		Start:     event.Start.DateTime,
+		End:       event.End.DateTime,
+		Attendees: []*EventAttendee{},
+	}
+	for _, a := range event.Attendees {
+		e.Attendees = append(e.Attendees, &EventAttendee{
+			Email:       a.Email,
+			DisplayName: a.DisplayName,
+		})
+	}
+
+	return e
 }
 
 func GetEventsForDate(srv *calendar.Service, date time.Time) {
