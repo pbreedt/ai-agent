@@ -12,8 +12,6 @@ import (
 type CalendarInput struct {
 	From time.Time `json:"from" doc:"Date and time to start looking for events in Calendar."`
 	To   time.Time `json:"to" doc:"Date and time to stop looking for events in Calendar."`
-	// From string `json:"from-datetime" doc:"Date and time in RFC3339 format. Calendar events that start after this date and time will be returned."`
-	// To   string `json:"to-datetime,omitempty" doc:"Date and time in RFC3339 format. If not provided, then assume end date to be the same as the start date."`
 }
 
 func GetCalendarEventsTool(a *Agent) ai.Tool {
@@ -29,7 +27,10 @@ func GetCalendarEventsTool(a *Agent) ai.Tool {
 		Gets the calendar events from start date to end date. If no end date is provided, then assume end date to be the same as the start date.
 		If a date is provided without a time, then assume the time is 00:00:00 for the start date and time is 23:59:59 for the end date.
 		Date and time should be in RFC3339 format, i.e. "2022-01-01T00:00:00Z".
-		Today's date is %s and the time now is %s. Using this date, you can infer other dates, such as next week or last month.`, time.Now().Format(time.DateOnly), time.Now().Format(time.TimeOnly)),
+		Today's date is %s and the time now is %s.
+		Using this date, you can infer other dates, such as next week or last month which will have start and end dates relative to today.
+		The week starts at 00:00:00 on Monday and ends at 23:59:59 on Sunday. When using relative dates, also confirm which dates you're using.
+		`, time.Now().Format(time.DateOnly), time.Now().Format(time.TimeOnly)),
 		func(ctx *ai.ToolContext, input CalendarInput) (string, error) {
 			if input.From.IsZero() {
 				return "Please provide at least a start date.", nil
