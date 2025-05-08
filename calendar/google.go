@@ -115,9 +115,9 @@ func (cal *GoogleCalendar) CreateEvent(event *Event) (*Event, error) {
 	// Change the scope to calendar.CalendarScope and delete any stored credentials.
 
 	// TODO: add recurrence
-	// TODO: add full-day events + proper timezones
 
 	ge := ToGoogleEvent(event)
+	log.Printf("[GoogleCalendar.CreateEvent] Creating event: %+v\n", ge)
 
 	calendarId := "primary"
 	ge, err := cal.srv.Events.Insert(calendarId, ge).Do()
@@ -131,17 +131,20 @@ func (cal *GoogleCalendar) CreateEvent(event *Event) (*Event, error) {
 }
 
 func ToGoogleEvent(event *Event) *calendar.Event {
+	tz := IfThisThenThat(os.Getenv("TZ") != "", os.Getenv("TZ"), "America/Chicago")
 	ge := &calendar.Event{
 		Summary:  event.Summary,
 		Location: event.Location,
 		// Description: "A chance to hear more about Google's developer products.",
 		Start: &calendar.EventDateTime{
-			DateTime: event.Start,
-			TimeZone: "America/Chicago",
+			Date:     IfThisThenThat(len(event.Start) == 10, event.Start, ""), // whole day event
+			DateTime: IfThisThenThat(len(event.Start) > 10, event.Start, ""),
+			TimeZone: tz,
 		},
 		End: &calendar.EventDateTime{
-			DateTime: event.End,
-			TimeZone: "America/Chicago",
+			Date:     IfThisThenThat(len(event.End) == 10, event.End, ""), // whole day event
+			DateTime: IfThisThenThat(len(event.End) > 10, event.End, ""),
+			TimeZone: tz,
 		},
 		// Recurrence: []string{"RRULE:FREQ=DAILY;COUNT=2"},
 		Attendees: []*calendar.EventAttendee{},
@@ -264,4 +267,12 @@ func saveToken(path string, token *oauth2.Token) {
 	}
 	defer f.Close()
 	json.NewEncoder(f).Encode(token)
+}
+
+// IfThisThenThat - ternary operator
+func IfThisThenThat[T any](this bool, that, _else T) T {
+	if this {
+		return that
+	}
+	return _else
 }

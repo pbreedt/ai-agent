@@ -70,15 +70,15 @@ func CreateCalendarEventsTool(a *Agent) ai.Tool {
 		a.genkit, "createCalEvents", fmt.Sprintf(`
 		Create and save a calendar event. If no end date is provided, then assume end date to be the same as the start date.
 		The following information can be provided:
-		- summary
-		- start date and time
-		- end date and time
-		- location
-		- attendees
-		At least a sammary and start date and time must be provided. 
-		If no end date is provided, then assume end date to be the same as the start date.
-		If no end time is provided, then assume end time to be 1 hour after the start time.
-		Date and time should be in RFC3339 format, i.e. "2022-01-01T00:00:00-05:00" for Chicago time.
+		- summary (mandatory)
+		- start date (mandatory, time could be provided or omitted)
+		- end date (optional, time could be provided or omitted)
+		- location (optional)
+		- attendees (optional)
+		If no start time is provided, then assume this is a whole day event and dates are represented as "2022-01-01".
+		If start time is provided but no end time is provided then use start time plus 1 hour as end time.
+		If no end date is provided then use start date as end date.
+		If time is provided, then dates are represented as "2022-01-01T00:00:00-05:00".
 		Today's date is %s and the time now is %s.
 		Using this date, you can infer other dates, such as next week or last month which will have start and end dates relative to today.
 		The week starts at 00:00:00 on Monday and ends at 23:59:59 on Sunday. When using relative dates, also confirm which dates you're using.
